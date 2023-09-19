@@ -1,11 +1,11 @@
 import random
 
-from pm4py.objects.log.log import EventLog, Trace, Event
+from pm4py.objects.log.obj import EventLog, Trace, Event
 from pm4py.util import xes_constants as xes
-from pm4py.objects.process_tree import pt_operator as pt_opt
+from pm4py.objects.process_tree.obj import Operator
 from pm4py.objects.process_tree import state as pt_st
-from pm4py.objects.process_tree import util as pt_util
-from pm4py.objects.process_tree.process_tree import ProcessTree
+from pm4py.objects.process_tree.utils import generic as pt_util
+from pm4py.objects.process_tree.obj import ProcessTree
 
 import datetime
 from copy import deepcopy
@@ -148,21 +148,21 @@ def execute_enabled(enabled,open,closed,actdict,execution_sequence=None):
     execution_sequence.append((vertex, pt_st.State.OPEN))
     if len(vertex.children) > 0:
         #print(vertex.children,'vertex.children')
-        if vertex.operator is pt_opt.Operator.LOOP:
+        if vertex.operator is Operator.LOOP:
             while len(vertex.children) < 3:
                 vertex.children.append(ProcessTree(parent=vertex))
-        if vertex.operator is pt_opt.Operator.SEQUENCE or vertex.operator is pt_opt.Operator.LOOP:
+        if vertex.operator is Operator.SEQUENCE or vertex.operator is Operator.LOOP:
             c = vertex.children[0]
             enabled.add(c)
             execution_sequence.append((c, pt_st.State.ENABLED))
-        elif vertex.operator is pt_opt.Operator.PARALLEL:
+        elif vertex.operator is Operator.PARALLEL:
             enabled |= set(vertex.children)
             #print(set(vertex.children),'set(vertex.children)')
             for x in vertex.children:
                 if x in closed:
                     closed.remove(x)
             map(lambda c: execution_sequence.append((c, pt_st.State.ENABLED)), vertex.children)
-        elif vertex.operator is pt_opt.Operator.XOR:
+        elif vertex.operator is Operator.XOR:
             #print(vertex.parent,'vertex.parent')
             #print(vertex.operator,'vertex.operator')
             #pre = execution_sequence[-1]
@@ -228,7 +228,7 @@ def execute_enabled(enabled,open,closed,actdict,execution_sequence=None):
             #print(execution_sequence[-1],execution_sequence[-1][0].label,'execution_sequence[-1]')
             execution_sequence.append((c, pt_st.State.ENABLED))
             #print(execution_sequence,'execution_sequence in XOR')
-        elif vertex.operator is pt_opt.Operator.OR:
+        elif vertex.operator is Operator.OR:
 
             vcl = [ele.label for ele in vertex.children]
             vclprob = []
@@ -305,9 +305,9 @@ def process_closed(closed_node, enabled, open, closed, execution_sequence):
             close(vertex, enabled, open, closed, execution_sequence)
         else:
             enable = None
-            if vertex.operator is pt_opt.Operator.SEQUENCE:
+            if vertex.operator is Operator.SEQUENCE:
                 enable = vertex.children[vertex.children.index(closed_node) + 1]
-            elif vertex.operator is pt_opt.Operator.LOOP:
+            elif vertex.operator is Operator.LOOP:
                 enable = vertex.children[random.randint(1, 2)] if vertex.children.index(closed_node) == 0 else \
                     vertex.children[0]
             if enable is not None:
@@ -336,9 +336,9 @@ def should_close(vertex, closed, child):
     """
     if vertex.children is None:
         return True
-    elif vertex.operator is pt_opt.Operator.LOOP or vertex.operator is pt_opt.Operator.SEQUENCE:
+    elif vertex.operator is Operator.LOOP or vertex.operator is Operator.SEQUENCE:
         return vertex.children.index(child) == len(vertex.children) - 1
-    elif vertex.operator is pt_opt.Operator.XOR:
+    elif vertex.operator is Operator.XOR:
         return True
     else:
         return set(vertex.children) <= closed

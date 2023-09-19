@@ -8,14 +8,14 @@ import math
 import os
 from pm4py.objects.log.importer.xes import importer as xes_importer
 from pm4py.util import constants
-from pm4py.statistics.traces.log import case_statistics
+from pm4py.statistics.traces.generic.log import case_statistics
 from pm4py.visualization.graphs import visualizer as graphs_visualizer
 from pm4py.algo.filtering.log.attributes import attributes_filter
 from pm4py.visualization.graphs import visualizer as graphs_visualizer
 from django.http import HttpResponse
 from uploadFile import views as uploadview
-from pm4py.algo.enhancement.roles import algorithm as roles_discovery
-from pm4py.algo.enhancement.roles.variants import pandas as rpd
+from pm4py.algo.organizational_mining.roles import algorithm as roles_discovery
+from pm4py.algo.organizational_mining.roles.variants import pandas as rpd
 #from django.shortcuts import render_to_response
 
 
@@ -219,7 +219,7 @@ def statics(request):
     st = datetime.fromtimestamp(100000000)
     et = datetime.fromtimestamp(200000000)
     bh_object = BusinessHours(st, et)
-    worked_time = bh_object.getseconds()
+    worked_time = bh_object.get_seconds()
 
     #log_path = os.path.join("tests","input_data","receipt.xes")
     initialtrace = infra.recieve_and_convert_log.initialtrace(log)

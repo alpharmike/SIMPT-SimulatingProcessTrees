@@ -1,11 +1,11 @@
 import random
 
-from pm4py.objects.log.log import EventLog, Trace, Event
+from pm4py.objects.log.obj import EventLog, Trace, Event
 from pm4py.util import xes_constants as xes
-from pm4py.objects.process_tree import pt_operator as pt_opt
+from pm4py.objects.process_tree.obj import Operator
 from pm4py.objects.process_tree import state as pt_st
-from pm4py.objects.process_tree import util as pt_util
-from pm4py.objects.process_tree.process_tree import ProcessTree
+from pm4py.objects.process_tree.utils import generic as pt_util
+from pm4py.objects.process_tree.obj import ProcessTree
 import numpy as np
 import datetime
 from copy import deepcopy
@@ -76,14 +76,14 @@ def generate_log(pt0,freqtrace, evaluatetreelist, loopdict0, no_traces=100):
         '''
         loopdict = deepcopy(loopdict0)
         for key,value in loopdict.items():
-            if value >= 1 and key.operator == pt_opt.Operator.LOOP:
+            if value >= 1 and key.operator == Operator.LOOP:
                 t = round(np.random.normal(value,value*(0.005),1)[0])
                 #print(t,key,"t is ")
                 if t < 1:
                     t = 1
                 loopdict[key] = t
             '''
-            elif value < 1 and key.operator == pt_opt.Operator.LOOP:
+            elif value < 1 and key.operator == Operator.LOOP:
                 c = 0
                 if random.random() < value:
                     c = 1
@@ -223,7 +223,7 @@ def execute_enabled(enabledlist,enabled,open,closed,evaluatetreelist,loopdict,ex
     if len(vertex.children) > 0:
         #print(vertex.children,'vertex.children')
 
-        if vertex.operator is pt_opt.Operator.LOOP:
+        if vertex.operator is Operator.LOOP:
             '''
             while len(vertex.children) < 3:
                 vertex.children.append(ProcessTree(parent=vertex))
@@ -237,7 +237,7 @@ def execute_enabled(enabledlist,enabled,open,closed,evaluatetreelist,loopdict,ex
 
                 #print(vertex,'here is loop')
 
-        if vertex.operator is pt_opt.Operator.SEQUENCE or vertex.operator is pt_opt.Operator.LOOP:
+        if vertex.operator is Operator.SEQUENCE or vertex.operator is Operator.LOOP:
             c = vertex.children[0]
             enabled.add(c)
             enabledlist.append(set([c]))
@@ -245,7 +245,7 @@ def execute_enabled(enabledlist,enabled,open,closed,evaluatetreelist,loopdict,ex
             execution_sequence.append((c, pt_st.State.ENABLED))
             #Leaveloop = 0
             #print(vertex,c,"here is loop and sequence")
-        elif vertex.operator is pt_opt.Operator.PARALLEL:
+        elif vertex.operator is Operator.PARALLEL:
             enabled |= set(vertex.children)
             enabledlist.append(set(vertex.children))
             #print(set(vertex.children),'set(vertex.children)')
@@ -253,7 +253,7 @@ def execute_enabled(enabledlist,enabled,open,closed,evaluatetreelist,loopdict,ex
                 if x in closed:
                     closed.remove(x)
             map(lambda c: execution_sequence.append((c, pt_st.State.ENABLED)), vertex.children)
-        elif vertex.operator is pt_opt.Operator.XOR:
+        elif vertex.operator is Operator.XOR:
             #print(vertex.parent,'vertex.parent')
             #print(vertex.operator,'vertex.operator')
             #pre = execution_sequence[-1]
@@ -361,10 +361,11 @@ def execute_enabled(enabledlist,enabled,open,closed,evaluatetreelist,loopdict,ex
             #print(execution_sequence[-1],execution_sequence[-1][0].label,'execution_sequence[-1]')
             execution_sequence.append((c, pt_st.State.ENABLED))
             #print(execution_sequence,'execution_sequence in XOR')
-        elif vertex.operator is pt_opt.Operator.OR:
+        elif vertex.operator is Operator.OR:
 
             vcl = [ele.label for ele in vertex.children]
             vclprob = []
+            some_children = []
             for ele in vertex.children:
 
                 vertex1 = findsimilartree(ele,evaluatetreelist)
@@ -437,9 +438,9 @@ def process_closed(enabledlist, closed_node, enabled, open, closed, execution_se
 
         else:
             enable = None
-            if vertex.operator is pt_opt.Operator.SEQUENCE:
+            if vertex.operator is Operator.SEQUENCE:
                 enable = vertex.children[vertex.children.index(closed_node) + 1]
-            elif vertex.operator is pt_opt.Operator.LOOP:
+            elif vertex.operator is Operator.LOOP:
                 #vertex1 = findsimilartree(vertex,loopdict)
                 #if loopdict[vertex1][0] == 'overone':
                    #loopdict[vertex1] = (loopdict[vertex1][0],loopdict[vertex1][1]-1)
@@ -513,7 +514,7 @@ def should_close(vertex, closed, child, loopdict):
         Boolean value (the vertex shall be closed)
     """
     '''
-    elif vertex.operator is pt_opt.Operator.LOOP or vertex.operator is pt_opt.Operator.SEQUENCE:
+    elif vertex.operator is Operator.LOOP or vertex.operator is Operator.SEQUENCE:
         return vertex.children.index(child) == len(vertex.children) - 1
     '''
     global Leaveloop
@@ -521,10 +522,10 @@ def should_close(vertex, closed, child, loopdict):
         return True
 
 
-    elif vertex.operator is pt_opt.Operator.SEQUENCE:
+    elif vertex.operator is Operator.SEQUENCE:
         return vertex.children.index(child) == len(vertex.children) - 1
 
-    elif vertex.operator is pt_opt.Operator.LOOP:
+    elif vertex.operator is Operator.LOOP:
 
         vertex1 = findsimilartree(vertex,loopdict)
         #print(vertex,loopdict[vertex],"line 360")
@@ -552,7 +553,7 @@ def should_close(vertex, closed, child, loopdict):
                Leaveloop = 1
                return True
 
-    elif vertex.operator is pt_opt.Operator.XOR:
+    elif vertex.operator is Operator.XOR:
         return True
 
     else:
